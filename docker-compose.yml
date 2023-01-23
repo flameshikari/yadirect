@@ -1,0 +1,10 @@
+version: "3.7"
+
+services:
+  yadisk-converter:
+    container_name: yadisk-converter
+    image: yadisk-converter
+    build: .
+    restart: always
+    ports:
+      - 8080:8080
