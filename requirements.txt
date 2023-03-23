@@ -1,1 +1,6 @@
+setuptools
+wheel
+
+Flask[async]
+Flask_Caching
 requests

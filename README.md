@@ -6,8 +6,8 @@ For example, we have a next shared URL: https://disk.yandex.ru/d/0gRKgtGjqWil4g
 
 2. Append the shared URL (or the part of it after the domain) and you can download the file/zipped dir from these URLs
 
-- http://localhost:8080/d/0gRKgtGjqWil4g
-- http://localhost:8080/https://disk.yandex.ru/d/0gRKgtGjqWil4g
+- http://localhost:5000/d/0gRKgtGjqWil4g
+- http://localhost:5000/https://disk.yandex.ru/d/0gRKgtGjqWil4g
 
 3. The file/zipped dir will start downloading
 

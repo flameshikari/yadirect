@@ -1,10 +1,22 @@
-version: "3.7"
+# Bu araç @keyiflerolsun tarafından | @KekikAkademi için yazılmıştır.
+
+version: "3.9"
+
+networks:
+    local:
+        driver: bridge
 
 services:
-  yadisk-converter:
-    container_name: yadisk-converter
-    image: yadisk-converter
-    build: .
-    restart: always
-    ports:
-      - 8080:8080
+
+    yadisk-converter:
+        container_name : yadisk-converter
+        image          : yadisk-converter:latest
+        restart        : always
+        build          : .
+
+        networks:
+            - local
+        ports:
+            - 5000:5000
+        volumes:
+            - .:/usr/src/yadisk-converter
