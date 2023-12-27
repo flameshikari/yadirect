@@ -9,4 +9,4 @@ FROM base AS release
 COPY --chown=node --from=install /app/node_modules node_modules
 COPY --chown=node src/ .
 USER node
-CMD npm start
+CMD node index.js
