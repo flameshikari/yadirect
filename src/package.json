@@ -1,15 +1,9 @@
 {
-  "name": "src",
+  "name": "Yadirect",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "type": "module",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "flameshikari",
+  "license": "MIT",
   "dependencies": {
     "apicache": "^1.6.3",
     "cors": "^2.8.5",
