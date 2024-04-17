@@ -5,13 +5,16 @@ import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
 
-import NodeFetchCache, { MemoryCache } from 'node-fetch-cache';
+import NodeFetchCache, { MemoryCache } from 'node-fetch-cache'
 
 const app = express()
 const router = express.Router()
 const port = 3000
-const fetch = NodeFetchCache.create({ cache: new MemoryCache({ ttl: 60000 }) });
-
+const fetch = NodeFetchCache.create({
+  cache: new MemoryCache({ ttl: 60000 }),
+  shouldCacheResponse: (response) => response.ok,
+})
+  
 
 router.get('/*', async (req, res, next) => {
     const regexp = /([di])\/(\w+)\/?(.*)?/
