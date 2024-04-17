@@ -3,19 +3,18 @@
 import apicache from 'apicache'
 import cors from 'cors'
 import express from 'express'
-import fetch from 'node-fetch'
 import helmet from 'helmet'
 
+import NodeFetchCache, { MemoryCache } from 'node-fetch-cache';
 
 const app = express()
 const router = express.Router()
 const port = 3000
-const cache = apicache.middleware
+const fetch = NodeFetchCache.create({ cache: new MemoryCache({ ttl: 60000 }) });
 
 
-router.get('/[di]/*', async (req, res, next) => {
-  const regexp = /([di])\/(\w+)\/?(.*)?/
-  try {
+router.get('/*', async (req, res, next) => {
+    const regexp = /([di])\/(\w+)\/?(.*)?/
     const match = req.originalUrl.match(regexp)
     const type = match[1]
     const hash = match[2]
@@ -24,25 +23,25 @@ router.get('/[di]/*', async (req, res, next) => {
     const redirectUrl = `https://cloud-api.yandex.net/v1/disk/public/resources/download?${path}public_key=${publicKeyUrl}`
     const response = await fetch(redirectUrl)
     const result = await response.json()
-    res.redirect(result.href)
-  } catch(error) {
-    next()
-  }
+    if (response.ok) {
+      res.redirect(result.href)
+    } else {
+      res.send(result)
+    }
 })
 
 app.set('json spaces', 2)
-   .set('x-powered-by', false)
+app.set('x-powered-by', false)
 
 app.use(
-  cache('1 hour'),
-  express.urlencoded({ extended: false }),
-  express.json(),
   cors(),
   helmet({ contentSecurityPolicy: false, xDownloadOptions: false }),
+  express.urlencoded({ extended: false }),
+  express.json(),
+  express.static('public'),
   router,
-  express.static('public')
 )
 
 app.listen(port, () => {
-  console.log(`nodejs: server: listening at ${port}/tcp`)
+  console.log(`listening at ${port}/tcp`)
 })
