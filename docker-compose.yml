@@ -1,9 +1,0 @@
-version: '3.8'
-
-services:
-  yadirect:
-    image: flameshikari/yadirect
-    container_name: yadirect
-    build: .
-    ports:
-      - 3000:3000

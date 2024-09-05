@@ -1,5 +1,26 @@
-# Usage
+<img src="./.github/assets/opengraph.png">
 
-Imagine we have a Yandex.Disk link `https://disk.yandex.ru/d/0gRKgtGjqWil4g` and this service serving at `localhost:3000`. You need to cut off `https://disk.yandex.ru` from URL and append it to `localhost:3000`. Final URL will be `localhost:3000/d/0gRKgtGjqWil4g`
+# ℹ️ Description
 
-It's better to host it on the server with `disk` subdomain, like `disk.example.com`, so you can just change domain from `disk.yandex.ru` to `disk.example.com` and this service will redirect to file downloading on execution.
+The service allows you to receive direct links to download a file/folder from [Yandex.Disk](https://disk.yandex.ru).
+
+The idea is hosting this service on `disk` subdomain with any reverse proxy server. For example:
+- you have this service accessible at [`disk.hexed.pw`](https://disk.hexed.pw)
+- you have non-direct link [`disk.yandex.ru/d/0gRKgtGjqWil4g`](https://disk.yandex.ru/d/0gRKgtGjqWil4g)
+
+All you had to do is replace `yandex.ru` to `hexed.pw` (will be [`disk.hexed.pw/d/0gRKgtGjqWil4g`](https://disk.hexed.pw/d/0gRKgtGjqWil4g)), then after pressing Enter the file/folder will start the downloading immediatly.
+
+By the way the service has the frontend just in case.
+
+## 🐳 Docker
+
+Available in <a href="https://github.com/flameshikari/yadirect/pkgs/container/yadirect">GHCR</a> and <a href="https://hub.docker.com/r/flameshikari/yadirect">Docker Hub</a> for multiple platforms.
+
+```yaml
+services:
+  yadirect:
+    image: flameshikari/yadirect
+    container_name: yadirect
+    ports:
+      - 3000:3000
+```
