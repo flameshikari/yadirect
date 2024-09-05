@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - .github
+      - .github/workflows/*
       - Dockerfile
       - package.json
       - src
@@ -45,7 +45,8 @@ jobs:
           images: |
             ${{ github.repository }}
             ghcr.io/${{ github.repository }}
-          tags: type=raw,value=latest
+          tags: |
+            type=raw,value=latest
 
       - name: Build Image
         uses: docker/build-push-action@v6
