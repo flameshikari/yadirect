@@ -1,6 +1,8 @@
-<img src="./.github/assets/opengraph.png">
+![Yadirect](./.github/assets/opengraph.png)
 
-# ℹ️ Description
+# 🔗 [Yadirect](https://github.com/flameshikari/yadirect) [![Build Status](https://img.shields.io/github/actions/workflow/status/flameshikari/yadirect/build.yml)](https://github.com/flameshikari/yadirect/actions)
+
+## ℹ️ Description
 
 The service allows you to receive direct links to download a file/folder from [Yandex.Disk](https://disk.yandex.ru).
 
@@ -12,7 +14,7 @@ All you had to do is replace `yandex.ru` to `hexed.pw` (will be [`disk.hexed.pw/
 
 By the way the service has the frontend just in case.
 
-## 🐳 Docker
+## 🐳 Installation
 
 Available in <a href="https://github.com/flameshikari/yadirect/pkgs/container/yadirect">GHCR</a> and <a href="https://hub.docker.com/r/flameshikari/yadirect">Docker Hub</a> for multiple platforms.
 
