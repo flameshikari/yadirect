@@ -1,81 +1,21 @@
-#!/usr/bin/env node
+import { createApp } from './app.js';
 
-import cors from 'cors';
-import express from 'express';
-import helmet from 'helmet';
+const port = Number(process.env.PORT ?? 3000);
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error('PORT must be an integer between 1 and 65535');
+}
 
-import NodeFetchCache, { MemoryCache } from 'node-fetch-cache';
-
-
-const app = express();
-const router = express.Router();
-const port = 3000;
-const fetch = NodeFetchCache.create({
-    cache: new MemoryCache({ ttl: 60000 }),
-    shouldCacheResponse: (response) => response.ok,
+const server = createApp().listen(port, '0.0.0.0', () => {
+  console.log(`Listening on port ${port}`);
+});
+server.on('error', (error) => {
+  console.error('Unable to start server:', error.message);
+  process.exit(1);
 });
 
-router.get(/\/list\/([di])\/(\w+)\/?(.*)?/, async (req, res, next) => {
-  try {
-    const regexp = /\/list\/([di])\/(\w+)\/?(.*)?/;
-    const match = req.originalUrl.match(regexp);
-    const type = match[1];
-    const hash = match[2];
-    const folderPath = match[3] ? `path=/${match[3]}&` : '';
-    const publicKeyUrl = `https://disk.yandex.ru/${type}/${hash}`;
-    const apiUrl = `https://cloud-api.yandex.net/v1/disk/public/resources?${folderPath}public_key=${encodeURIComponent(publicKeyUrl)}`;
-  
-    const response = await fetch(apiUrl);
-    const data = await response.json();
-
-    if (response.ok && data._embedded && data._embedded.items) {
-      res.json(data._embedded.items);
-    } else {
-      res.status(response.status).json(data);
-    }
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-router.get(/([di])\/(\w+)\/?(.*)?/, async (req, res, next) => {
-    try {
-        const regexp = /([di])\/(\w+)\/?(.*)?/;
-        const match = req.originalUrl.match(regexp);
-        const type = match[1];
-        const hash = match[2];
-        const path = match[3] ? `path=/${match[3]}&` : '';
-        const publicKeyUrl = `https://disk.yandex.ru/${type}/${hash}`;
-        const redirectUrl = `https://cloud-api.yandex.net/v1/disk/public/resources/download?${path}public_key=${publicKeyUrl}`;
-        const response = await fetch(redirectUrl);
-        const result = await response.json();
-        if (response.ok) {
-            res.redirect(result.href);
-        } else {
-            res.json(result);
-        };
-    } catch(e) {
-        res.redirect('/');
-    };
-});
-
-router.all('*', (req, res) => {
-    res.redirect('/');
-});
-
-app.set('json spaces', 2);
-app.set('x-powered-by', false);
-
-app.use(
-    cors(),
-    helmet({ contentSecurityPolicy: false, xDownloadOptions: false }),
-    express.urlencoded({ extended: false }),
-    express.json(),
-    express.static('./public'),
-    router,
-);
-
-
-app.listen(port, () => {
-    console.log(`listening at ${port}/tcp`);
-});
+for (const signal of ['SIGTERM', 'SIGINT']) {
+  process.once(signal, () => {
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), 10_000).unref();
+  });
+}

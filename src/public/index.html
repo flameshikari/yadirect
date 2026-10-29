@@ -1,21 +1,38 @@
 <!doctype html>
-<html>
+<html lang="en">
     <head>
         <title>Yadirect</title>
-        <meta charset="utf-8"/>
-        <link rel="icon" type="image/x-icon" href="favicon.svg">
-        <link href="style.css" rel="stylesheet"/>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="Get a direct download link for a public Yandex.Disk file or folder.">
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+        <link href="/style.css" rel="stylesheet">
     </head>
     <body>
-        <div class="container">
-            <a href="https://github.com/flameshikari/yadirect">
-                <span class="title">
-                    <font color="ff0000">Y</font><font color="ffffff">adirect</font>
-                </span>
-            </a>
-            <input autofocus id="text" type="text" placeholder="https://disk.yandex.ru/...">
-            <span class="note"></span>
-        </div>
-        <script src="script.js"></script>
+        <main class="container">
+            <a class="brand" href="https://github.com/flameshikari/yadirect" aria-label="Yadirect on GitHub"><h1 class="title"><span>Y</span>adirect</h1></a>
+            <form id="download-form" novalidate data-state="idle">
+                <div class="input-row">
+                    <input autofocus id="text" name="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" aria-label="Public Yandex.Disk link">
+                    <div class="action-slot" data-mode="process">
+                        <button class="action" type="submit" disabled aria-label="Process link">
+                            <span class="loader" aria-hidden="true"><span class="spinner"></span></span>
+                            <svg class="process-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                            <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                                <path d="m6 6 12 12M18 6 6 18"/>
+                            </svg>
+                        </button>
+                        <a id="download-button" class="action" inert aria-hidden="true" aria-label="Download file or folder">
+                            <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 3v12m-5-5 5 5 5-5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </main>
+        <script type="module" src="/script.js"></script>
     </body>
 </html>

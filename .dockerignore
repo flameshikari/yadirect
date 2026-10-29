@@ -1,1 +1,7 @@
-.git*
+.git
+.github
+node_modules
+coverage
+test
+*.log
+.env*
