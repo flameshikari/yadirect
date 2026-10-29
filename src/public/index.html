@@ -13,7 +13,10 @@
             <a class="brand" href="https://github.com/flameshikari/yadirect" aria-label="Yadirect on GitHub"><h1 class="title"><span>Y</span>adirect</h1></a>
             <form id="download-form" novalidate data-state="idle">
                 <div class="input-row">
-                    <input autofocus id="text" name="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" aria-label="Public Yandex.Disk link">
+                    <div class="input-field">
+                        <input id="text" name="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="disk.yandex.ru/i/0gRKgtGjqWil4g" aria-label="Public Yandex.Disk link">
+                        <span class="placeholder" aria-hidden="true" hidden></span>
+                    </div>
                     <div class="action-slot" data-mode="process">
                         <button class="action" type="submit" disabled aria-label="Process link">
                             <span class="loader" aria-hidden="true"><span class="spinner"></span></span>

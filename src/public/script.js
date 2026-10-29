@@ -6,6 +6,25 @@ const input = document.querySelector('#text');
 const button = form.querySelector('button');
 const downloadButton = document.querySelector('#download-button');
 const actionSlot = document.querySelector('.action-slot');
+const placeholderAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
+const placeholderKeyLength = '0gRKgtGjqWil4g'.length;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const placeholder = document.querySelector('.placeholder');
+placeholder.textContent = input.placeholder;
+placeholder.hidden = false;
+input.parentElement.classList.add('placeholder-enhanced');
+let placeholderType = 'i';
+
+setInterval(() => {
+  if (input.value || document.activeElement === input || document.hidden || reducedMotion.matches) return;
+  placeholderType = placeholderType === 'i' ? 'd' : 'i';
+  const key = Array.from({ length: placeholderKeyLength }, () =>
+    placeholderAlphabet[Math.floor(Math.random() * placeholderAlphabet.length)],
+  ).join('');
+  input.placeholder = `disk.yandex.ru/${placeholderType}/${key}`;
+  placeholder.textContent = input.placeholder;
+}, 250);
+
 let storage;
 try { storage = window.localStorage; } catch { /* Use the in-memory cache. */ }
 const cache = createDownloadCache({ storage });
@@ -50,6 +69,19 @@ function reset() {
   }
 }
 
+input.addEventListener('paste', (event) => {
+  if (input.readOnly) return;
+  const text = event.clipboardData?.getData('text/plain');
+  if (!text) return;
+  event.preventDefault();
+  input.setRangeText(
+    text.trim().replace(/^https?:\/\//i, ''),
+    input.selectionStart ?? 0,
+    input.selectionEnd ?? input.value.length,
+    'end',
+  );
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+});
 input.addEventListener('input', reset);
 window.addEventListener('pageshow', reset);
 reset();
