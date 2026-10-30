@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 go run ./tools/upx /usr/local/bin/upx
 COPY --from=frontend /app/server/public ./public
 RUN go mod verify && go test ./... && mkdir -p /data && \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /yadirect . && \
-    upx --best --lzma --no-progress /yadirect && upx -t /yadirect
+    /usr/local/bin/upx --best --lzma --no-progress /yadirect && /usr/local/bin/upx -t /yadirect
 
 FROM dhi.io/static:20230311 AS release
 WORKDIR /app

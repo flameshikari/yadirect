@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rename, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildPage } from '../client/index.js';
+import { resolveUPX } from './upx.js';
 
 const root = new URL('../', import.meta.url);
 const serverDirectory = fileURLToPath(new URL('server/', root));
@@ -14,11 +15,7 @@ async function run(args, message, { cwd = serverDirectory, env = {} } = {}) {
   if (await command.exited !== 0) throw new Error(message);
 }
 async function findUPX() {
-  const executable = process.env.UPX_BINARY || Bun.which('upx');
-  if (executable) return executable;
-  const cached = fileURLToPath(new URL(`node_modules/.cache/upx/5.3.0/${process.platform}-${process.arch}/upx`, root));
-  if (!(await Bun.file(cached).exists())) await run(['go', 'run', './tools/upx', cached], 'UPX installation failed');
-  return cached;
+  return resolveUPX({ install: cached => run(['go', 'run', './tools/upx', cached], 'UPX installation failed') });
 }
 async function resolveVersion(version) {
   version ||= process.env.RELEASE_VERSION || (await Bun.file(new URL('package.json', root)).json()).version;
