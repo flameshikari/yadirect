@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildPage } from '../client/index.js';
 import { resolveUPX } from './upx.js';
+import { gzipArchive } from './archive.js';
 
 const root = new URL('../', import.meta.url);
 const serverDirectory = fileURLToPath(new URL('server/', root));
@@ -67,7 +68,7 @@ export async function buildRelease({ selectedTargets = targets, compress = true,
   for (const target of selectedTargets) {
     const name = `yadirect-${target.os}-${target.arch}`;
     const filename = target.os === 'windows' ? 'yadirect.exe' : 'yadirect';
-    const archiveName = `yadirect-${version}-${target.os}-${target.arch}.${target.os === 'windows' ? 'zip' : 'tar'}`;
+    const archiveName = `yadirect-${version}-${target.os}-${target.arch}.${target.os === 'windows' ? 'zip' : 'tar.gz'}`;
     const staging = await mkdtemp(join(directory, '.archive-'));
     try {
       await compile({ ...target, version, compress, frontend: false, output: join(staging, filename) });
@@ -75,13 +76,16 @@ export async function buildRelease({ selectedTargets = targets, compress = true,
       if (target.os === 'windows') {
         await run(['zip', '-0', '-q', '-X', temporaryArchive, filename], 'ZIP archive failed', { cwd: staging });
       } else {
-        await run(['tar', '-cf', temporaryArchive, '-C', staging, filename], 'TAR archive failed');
+        const tar = join(staging, 'payload.tar');
+        await run(['tar', '-cf', tar, '-C', staging, filename], 'TAR archive failed');
+        // Level zero keeps Linux's UPX payload uncompressed while remaining a valid .tar.gz.
+        await gzipArchive(tar, temporaryArchive, target.os === 'linux' ? 0 : 9);
       }
       await rename(temporaryArchive, join(directory, archiveName));
-      for (const legacy of [name, `${name}.exe`, `${name}.zip`, `${name}.tar.gz`]) {
+      for (const legacy of [name, `${name}.exe`, `${name}.zip`, `${name}.tar.gz`, `yadirect-${version}-${target.os}-${target.arch}.tar`]) {
         await rm(join(directory, legacy), { force: true });
       }
-      console.log(`Archived ${archiveName} (store only)`);
+      console.log(`Archived ${archiveName} (${target.os === 'windows' ? 'store only' : target.os === 'linux' ? 'gzip level 0' : 'gzip level 9'})`);
     } finally {
       await rm(staging, { recursive: true, force: true });
     }
