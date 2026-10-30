@@ -1,0 +1,14 @@
+services:
+  yadirect:
+    image: flameshikari/yadirect
+    container_name: yadirect
+    build: .
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    volumes:
+      - yadirect-data:/app/data
+    command: -c
+
+volumes:
+  yadirect-data:

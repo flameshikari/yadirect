@@ -1,19 +1,33 @@
 # syntax=docker/dockerfile:1
 ARG BUN_VERSION=1.4.4
-FROM dhi.io/bun:${BUN_VERSION}-dev AS install
+ARG GO_VERSION=1.27.3
+FROM --platform=$BUILDPLATFORM dhi.io/bun:${BUN_VERSION}-dev AS frontend
 WORKDIR /app
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile --production
+RUN bun install --frozen-lockfile
+COPY client/ ./client/
+RUN bun run build:frontend
 
-FROM dhi.io/bun:${BUN_VERSION} AS release
+FROM --platform=$BUILDPLATFORM dhi.io/golang:${GO_VERSION}-dev AS backend
+ARG TARGETOS
+ARG TARGETARCH
+ARG VERSION=1.0.0
 WORKDIR /app
-ENV NODE_ENV=production PORT=3000
-COPY --from=install --chown=65532:65532 /app/node_modules ./node_modules
-COPY --chown=65532:65532 package.json ./
-COPY --chown=65532:65532 src ./src
+COPY server/go.mod server/go.sum ./
+RUN go mod download
+COPY server/ ./
+RUN CGO_ENABLED=0 go run ./tools/upx /usr/local/bin/upx
+COPY --from=frontend /app/server/public ./public
+RUN go mod verify && go test ./... && mkdir -p /data && \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /yadirect . && \
+    upx --best --lzma --no-progress /yadirect && upx -t /yadirect
+
+FROM dhi.io/static:20230311 AS release
+WORKDIR /app
+ENV SQLITE_PATH=/app/data/yadirect.sqlite
+COPY --from=backend --chown=65532:65532 /data ./data
+COPY --from=backend /yadirect /usr/local/bin/yadirect
 USER 65532:65532
-EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD ["bun", "-e", "const r = await fetch('http://127.0.0.1:' + process.env.PORT + '/health', { signal: AbortSignal.timeout(4000) }); process.exit(r.ok ? 0 : 1)"]
-ENTRYPOINT ["bun"]
-CMD ["src/index.js"]
+VOLUME ["/app/data"]
+EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/yadirect"]

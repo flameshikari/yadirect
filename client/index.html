@@ -3,18 +3,21 @@
     <head>
         <title>Yadirect</title>
         <meta charset="utf-8">
+        <meta name="yadirect-counter" content="disabled">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="Get a direct download link for a public Yandex.Disk file or folder.">
-        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
-        <link href="/style.css" rel="stylesheet">
+        <link rel="icon" type="image/x-icon" href="./favicon.ico">
+        <link href="./styles/index.css" rel="stylesheet">
     </head>
     <body>
         <main class="container">
-            <a class="brand" href="https://github.com/flameshikari/yadirect" aria-label="Yadirect on GitHub"><h1 class="title"><span>Y</span>adirect</h1></a>
+            <div class="masthead">
+                <a class="brand" href="https://github.com/flameshikari/yadirect" aria-label="Yadirect on GitHub"><h1 class="title"><span class="title-accent">Y</span>ad<span class="title-i">i<span class="counter" hidden role="status" aria-live="polite" aria-atomic="true"><span>rected</span> <span id="converted-count">—</span> <span>links</span></span></span>rect</h1></a>
+            </div>
             <form id="download-form" novalidate data-state="idle">
                 <div class="input-row">
                     <div class="input-field">
-                        <input id="text" name="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="disk.yandex.ru/i/0gRKgtGjqWil4g" aria-label="Public Yandex.Disk link">
+                        <input id="text" name="url" type="text" inputmode="url" maxlength="32" autocomplete="off" spellcheck="false" placeholder="disk.yandex.ru/i/0gRKgtGjqWil4g" aria-label="Public Yandex.Disk link">
                         <span class="placeholder" aria-hidden="true" hidden></span>
                     </div>
                     <div class="action-slot" data-mode="process">
@@ -36,6 +39,6 @@
                 </div>
             </form>
         </main>
-        <script type="module" src="/script.js"></script>
+        <script type="module" src="./scripts/index.js"></script>
     </body>
 </html>

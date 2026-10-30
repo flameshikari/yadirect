@@ -1,17 +1,16 @@
-@font-face {
-    font-family: 'yandexsans';
-    src: url('/font.woff2') format('woff2');
-    font-display: swap;
-}
+@import './fonts/menlo.css';
+@import './fonts/yandex-sans.css';
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { color-scheme: dark; }
 body {
+    --accent-color: #ec6f82;
+    --mono-font: 'Menlo', ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
     margin: 0;
     background: #111;
     color: #e5e0df;
-    font: 18px/1.5 'yandexsans', sans-serif;
+    font: 18px/1.5 'Yandex Sans Text', sans-serif;
 }
 button, input { font: inherit; }
 .container {
@@ -24,7 +23,7 @@ button, input { font: inherit; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 3px;
 }
 .brand {
     color: inherit;
@@ -38,12 +37,50 @@ button, input { font: inherit; }
 .brand:focus-visible { outline: 1px solid #d6c9ca; outline-offset: 8px; border-radius: 4px; }
 .title {
     margin: 0;
-    font-size: clamp(60px, 14vw, 100px);
-    line-height: 1.2;
-    letter-spacing: -5px;
-    animation: enter 650ms ease-out both;
+    position: relative;
+    left: -5.5cqi;
+    font-size: 29.6cqi;
+    font-weight: 500;
+    font-style: italic;
+    line-height: 1;
+    letter-spacing: -.05em;
+    white-space: nowrap;
 }
-.title span { color: #ec6f82; }
+.title-accent { color: var(--accent-color); }
+.title-i { position: relative; display: inline-block; }
+.masthead { position: relative; flex: 0 0 auto; width: 100%; max-width: 420px; container-type: inline-size; animation: enter 650ms ease-out both; }
+.brand { display: block; }
+.counter {
+    position: absolute;
+    left: calc(100% + 1.55em + 2px);
+    top: 12%;
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: .25em;
+    width: max-content;
+    margin: 0;
+    font: italic 500 3.333cqi/1.25 'Yandex Sans Text', sans-serif;
+    padding-right: .3em;
+    letter-spacing: 0;
+    color: #fff;
+    mask-image: linear-gradient(to right, #000, rgb(0 0 0 / .4286));
+    text-align: right;
+    white-space: nowrap;
+}
+#converted-count {
+    display: inline-grid;
+    justify-items: end;
+    overflow: hidden;
+    height: 1.65em;
+    padding-bottom: .4em;
+    margin-bottom: -.4em;
+    mask-image: linear-gradient(to bottom, #000 60%, transparent);
+    padding-inline: .2em;
+    margin-inline: -.2em;
+    font-variant-numeric: tabular-nums;
+}
+#converted-count > span { grid-area: 1 / 1; transform-origin: center top; }
 form { --control-size: 48px; width: 100%; max-width: 420px; animation: enter 550ms 240ms ease-out both; }
 .input-row {
     --action-background: #398cff70;
@@ -62,9 +99,10 @@ form { --control-size: 48px; width: 100%; max-width: 420px; animation: enter 550
 form[aria-busy=true] .input-row { --action-background: #303030; }
 .input-field {
     position: relative;
+    overflow: hidden;
     flex: 1;
     min-width: 0;
-    font: 18px/1.5 ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+    font: 18px/1.5 var(--mono-font);
 }
 .placeholder {
     position: absolute;
@@ -75,11 +113,17 @@ form[aria-busy=true] .input-row { --action-background: #303030; }
     white-space: nowrap;
     color: #777;
     pointer-events: none;
-    transition: opacity 70ms ease;
+    transform: translateX(0) scaleX(1);
+    transform-origin: left center;
+    transition: transform 220ms cubic-bezier(.16, 1, .3, 1), opacity 140ms ease;
 }
 .placeholder-enhanced input::placeholder, input:focus::placeholder { opacity: 0; }
-.input-field:focus-within .placeholder { opacity: 0; }
-.input-field:has(input:not(:placeholder-shown)) .placeholder { opacity: 0; transition: none; }
+.input-field:focus-within .placeholder {
+    opacity: 0;
+    transform: translateX(110%) scaleX(1.8);
+    transition: transform 170ms cubic-bezier(.55, .05, .85, .4), opacity 110ms 30ms ease;
+}
+.input-field:has(input:not(:placeholder-shown)) .placeholder { opacity: 0; transform: translateX(110%) scaleX(1.8); transition: none; }
 input {
     width: 100%;
     min-width: 0;
@@ -174,7 +218,7 @@ form[aria-busy=true] .spinner { animation: spin 750ms linear infinite; }
 @keyframes enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 540px) {
-    .container { padding: 32px 20px; gap: 10px; }
+    .container { padding: 32px 20px; gap: 2.5px; }
     form { --control-size: 44px; }
     .input-field { font-size: 16px; }
     input { padding-inline: 8px; }

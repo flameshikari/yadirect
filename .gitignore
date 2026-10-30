@@ -1,3 +1,10 @@
-docker-compose.yml
 node_modules
 package-lock.json
+/data/
+/public/
+/yadirect
+/yadirect.exe
+/server/public/
+.yadirect-build-*
+release/
+server/rsrc_windows_*.syso

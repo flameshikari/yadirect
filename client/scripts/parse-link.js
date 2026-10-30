@@ -1,3 +1,6 @@
+export const PUBLIC_KEY_LENGTH = 14;
+export const PUBLIC_KEY_PATTERN = /^[A-Za-z0-9_-]{14}$/;
+
 export function parseLink(value) {
   const input = value.trim();
   if (!input) throw new Error('Paste a public Yandex.Disk link first.');
@@ -12,8 +15,9 @@ export function parseLink(value) {
   if (!['https:', 'http:'].includes(url.protocol)
       || !['disk.yandex.ru', 'disk.yandex.com', 'yadi.sk'].includes(url.hostname)
       || url.username || url.password || url.port
-      || !/^\/[di]\/[\w-]+(?:\/.*)?$/.test(url.pathname)) {
-    throw new Error('Use a public link such as https://disk.yandex.ru/d/your-file.');
+      || !/^\/[di]\/[^/]+(?:\/.*)?$/.test(url.pathname)
+      || !PUBLIC_KEY_PATTERN.test(url.pathname.split('/')[2])) {
+    throw new Error('Use a public Yandex.Disk link with a 14-character file ID.');
   }
   try {
     decodeURIComponent(url.pathname);

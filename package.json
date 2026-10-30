@@ -5,14 +5,18 @@
   "author": "flameshikari",
   "license": "MIT",
   "scripts": {
-    "start": "bun src/index.js",
-    "dev": "bun --watch src/index.js",
-    "test": "bun test"
+    "build:frontend": "bun client/index.js",
+    "build": "bun build/compile.js",
+    "start": "bun run build && ./yadirect",
+    "dev": "bun build/dev.js",
+    "test": "bun test",
+    "test:backend": "cd server && go test ./...",
+    "build:dev": "bun client/index.js",
+    "build:prod": "bun client/index.js",
+    "build:all": "bun build/compile.js --all"
   },
-  "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.3.0",
-    "helmet": "^8.3.0"
-  },
-  "packageManager": "bun@1.4.4"
+  "packageManager": "bun@1.4.4",
+  "devDependencies": {
+    "html-minifier-terser": "^7.2.0"
+  }
 }

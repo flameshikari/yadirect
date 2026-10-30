@@ -2,6 +2,14 @@
 .github
 node_modules
 coverage
-test
+tests
 *.log
 .env*
+data
+public
+yadirect
+yadirect.exe
+server/public
+.yadirect-build-*
+release/
+server/rsrc_windows_*.syso

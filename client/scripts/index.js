@@ -1,5 +1,7 @@
-import { parseLink } from './parse-link.js';
+import { parseLink, PUBLIC_KEY_LENGTH } from './parse-link.js';
 import { createDownloadCache } from './download-cache.js';
+import { bindInputMask } from './input-mask.js';
+import { refreshCounter, renderStats, recordCacheHit } from './stats.js';
 
 const form = document.querySelector('#download-form');
 const input = document.querySelector('#text');
@@ -7,7 +9,7 @@ const button = form.querySelector('button');
 const downloadButton = document.querySelector('#download-button');
 const actionSlot = document.querySelector('.action-slot');
 const placeholderAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
-const placeholderKeyLength = '0gRKgtGjqWil4g'.length;
+const placeholderKeyLength = PUBLIC_KEY_LENGTH;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const placeholder = document.querySelector('.placeholder');
 placeholder.textContent = input.placeholder;
@@ -30,8 +32,11 @@ try { storage = window.localStorage; } catch { /* Use the in-memory cache. */ }
 const cache = createDownloadCache({ storage });
 let pending = false;
 let expiryTimer;
+let skipNextDownloadHit = false;
+let reportingHit = false;
 
-function showDownload(entry) {
+function showDownload(entry, alreadyCounted = false) {
+  skipNextDownloadHit = alreadyCounted;
   clearTimeout(expiryTimer);
   downloadButton.href = entry.href;
   actionSlot.dataset.mode = 'download';
@@ -41,12 +46,13 @@ function showDownload(entry) {
   button.setAttribute('aria-hidden', 'true');
   button.disabled = true;
   form.dataset.state = 'success';
-  expiryTimer = setTimeout(reset, Math.max(0, entry.expiresAt - Date.now()));
+  expiryTimer = setTimeout(reset, Math.min(2_147_483_647, Math.max(0, entry.expiresAt - Date.now())));
 }
 
 function reset() {
   if (pending) return;
   clearTimeout(expiryTimer);
+  skipNextDownloadHit = false;
   actionSlot.dataset.mode = 'process';
   downloadButton.inert = true;
   downloadButton.setAttribute('aria-hidden', 'true');
@@ -69,20 +75,35 @@ function reset() {
   }
 }
 
-input.addEventListener('paste', (event) => {
-  if (input.readOnly) return;
-  const text = event.clipboardData?.getData('text/plain');
-  if (!text) return;
-  event.preventDefault();
-  input.setRangeText(
-    text.trim().replace(/^https?:\/\//i, ''),
-    input.selectionStart ?? 0,
-    input.selectionEnd ?? input.value.length,
-    'end',
-  );
-  input.dispatchEvent(new Event('input', { bubbles: true }));
+downloadButton.addEventListener('click', (event) => {
+  let entry;
+  let path;
+  try { path = parseLink(input.value); entry = cache.get(path); } catch { /* The input is no longer a public link. */ }
+  if (!entry) {
+    event.preventDefault();
+    reset();
+  } else if (skipNextDownloadHit) {
+    skipNextDownloadHit = false;
+  } else {
+    if (!reportingHit) {
+      reportingHit = true;
+      void recordCacheHit(path, entry).then(next => {
+        const current = cache.get(path);
+        if (next && current?.href === entry.href && current?.receipt === entry.receipt) {
+          cache.set(path, next.href, next.expiresAt, next.receipt);
+        }
+      }).finally(() => { reportingHit = false; });
+    }
+  }
 });
+
+bindInputMask(input);
 input.addEventListener('input', reset);
+input.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' || event.isComposing) return;
+  event.preventDefault();
+  if (!event.repeat && !pending) form.requestSubmit();
+});
 window.addEventListener('pageshow', reset);
 reset();
 
@@ -107,9 +128,12 @@ form.addEventListener('submit', async (event) => {
     invalidLink = [400, 403, 404].includes(response.status);
     const data = await response.json();
     if (!response.ok) throw new Error(data?.message || 'Could not process link');
-    const entry = cache.set(path, data.href, data.expiresAt);
+    const entry = cache.set(path, data.href, data.expiresAt, data.receipt);
     if (!entry) throw new Error('Invalid or expired download link');
-    showDownload(entry);
+    showDownload(entry, true);
+    const convertedLinks = response.headers.get('X-Converted-Links');
+    if (/^\d+$/.test(convertedLinks ?? '')) renderStats({ convertedLinks: Number(convertedLinks) });
+    void refreshCounter();
     downloadButton.click();
   } catch {
     form.dataset.state = 'error';

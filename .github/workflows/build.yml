@@ -4,56 +4,103 @@ on:
   push:
     branches:
       - master
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
     paths:
       - .github/workflows/*
       - Dockerfile
       - package.json
       - bun.lock
       - .dockerignore
-      - 'src/**'
-      - 'test/**'
+      - 'client/**'
+      - 'tests/**'
+      - 'build/**'
+      - 'server/**'
   workflow_dispatch:
 
+env:
+  RELEASE_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+
 jobs:
-  build:
-    name: Build
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.4
+
+      - name: Resolve version
+        id: version
+        run: bun -e 'console.log("version=" + (process.env.RELEASE_VERSION || (await Bun.file("package.json").json()).version).replace(/^v/, ""))' >> "$GITHUB_OUTPUT"
+
+      - name: Setup Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build standalone page
+        run: bun run build:frontend
+
+      - name: Audit frontend dependencies
+        run: bun audit
+
+      - name: Audit Go dependencies
+        working-directory: server
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 -scan module
+          go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
+      - name: Test
+        run: bun test
+
+      - name: Test Go backend
+        run: go test -race ./... && go vet ./...
+        working-directory: server
+
+
+  docker:
+    name: Docker
+    needs: checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.4
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Test
-        run: bun test
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Login to the GitHub Container Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Login to Docker Hardened Images
-        uses: docker/login-action@v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           registry: dhi.io
           username: ${{ github.actor }}
@@ -61,20 +108,91 @@ jobs:
 
       - name: Extract Metadata
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
           images: |
             ${{ github.repository }}
             ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest
+            type=ref,event=tag
 
       - name: Build Image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           context: .
+          build-args: VERSION=${{ needs.checks.outputs.version }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+
+  binaries:
+    name: Binary [${{ matrix.os }}/${{ matrix.arch }}]
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux, windows, darwin]
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.4
+      - name: Setup Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Build standalone page
+        run: bun run build:frontend
+      - name: Verify Go dependencies
+        run: go mod verify
+        working-directory: server
+      - name: Audit target dependencies
+        working-directory: server
+        run: |
+          GOBIN="$RUNNER_TEMP" go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          CGO_ENABLED=0 GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} "$RUNNER_TEMP/govulncheck" ./...
+      - name: Build release archive
+        run: bun build/compile.js --os ${{ matrix.os }} --arch ${{ matrix.arch }} --release
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: yadirect-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            release/yadirect-*.tar
+            release/yadirect-*.zip
+          compression-level: 0
+          retention-days: 7
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [docker, binaries]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          path: release
+          pattern: yadirect-*
+          merge-multiple: true
+      - name: Create release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
+        with:
+          files: |
+            release/yadirect-*.tar
+            release/yadirect-*.zip
+          generate_release_notes: true
